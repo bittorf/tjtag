@@ -40,6 +40,14 @@
 #define TRUE  1
 #define FALSE 0
 
+/* Change me to enable/disable JT MODS */
+#define USE_JTMODS
+
+#ifdef USE_JTMODS
+#include "jt_mods.h"
+#endif
+
+
 
 static unsigned int ctrl_reg;
 
@@ -418,6 +426,12 @@ flash_chip_type  flash_chip_list[] =
 
 void lpt_openport(void)
 {
+#ifdef USE_JTMODS
+
+    jtMod_init(); 
+
+#else
+
 #ifdef WINDOWS_VERSION    // ---- Compiler Specific Code ----
 
     HANDLE h;
@@ -466,11 +480,19 @@ void lpt_openport(void)
 #endif
 
 #endif
+
+#endif // USE_JTMODS
 }
 
 
 void lpt_closeport(void)
 {
+#ifdef USE_JTMODS
+
+    jtMod_done(); 
+
+#else
+
 #ifndef WINDOWS_VERSION   // ---- Compiler Specific Code ----
 
 #ifndef __FreeBSD__    // ---- Compiler Specific Code ----
@@ -487,6 +509,7 @@ void lpt_closeport(void)
     close(pfd);
 
 #endif
+#endif // USE_JTMODS
 }
 
 // Yoon's extensions for exiting debug mode
@@ -508,6 +531,11 @@ static unsigned char clockin(int tms, int tdi)
     else        data = (1 << TDO) | (0 << TCK) | (tms << TMS) | (tdi << TDI);
     cable_wait();
 
+#ifdef USE_JTMODS
+
+    jtMod_outp(data);
+
+#else
 
 #ifdef WINDOWS_VERSION   // ---- Compiler Specific Code ----
     _outp(0x378, data);
@@ -515,21 +543,35 @@ static unsigned char clockin(int tms, int tdi)
 
     ioctl(pfd, PPWDATA, &data);
 #endif
+#endif
+
     if (wiggler) data = (1 << WTDO) | (1 << WTCK) | (tms << WTMS) | (tdi << WTDI) | (1 << WTRST_N);
     else        data = (1 << TDO) | (1 << TCK) | (tms << TMS) | (tdi << TDI);
     cable_wait();
 
+#ifdef USE_JTMODS
+
+    jtMod_outp(data);
+
+#else
 
 #ifdef WINDOWS_VERSION   // ---- Compiler Specific Code ----
     _outp(0x378, data);
 #else
     ioctl(pfd, PPWDATA, &data);
 #endif
+#endif
 
+#ifdef USE_JTMODS
+
+    jtMod_inp(&data);
+
+#else
 #ifdef WINDOWS_VERSION   // ---- Compiler Specific Code ----
     data = (unsigned char)_inp(0x379);
 #else
     ioctl(pfd, PPRSTATUS, &data);
+#endif
 #endif
 
     data ^= 0x80;

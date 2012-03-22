@@ -19,6 +19,8 @@
 //
 // **************************************************************************
 
+/* "JTMOD" modifications to tjtag v3.0.1 by Jeremy Trimble. */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
